@@ -193,7 +193,7 @@ alert tcp any any -> any 80 (msg:"LFI Payload"; flow:to_server,established; cont
 alert tcp any 80 -> any any (msg:"RSA private key in HTTP response"; flow:to_client,established; content:"BEGIN RSA PRIVATE KEY"; nocase; sid:1000005; rev:1;)
 
 # LFI — SSH Private Key Access Attempt
-alert tcp any 80 -> any any (msg:"RSA private key in HTTP response"; flow:to_client,established; content:"BEGIN RSA PRIVATE KEY"; nocase; sid:1000006; rev:1;)
+alert tcp any any -> any 80 (msg:"LFI - SSH private key access attempt"; flow:to_server,established; content:".ssh/id_rsa"; http_uri; sid:1000006; rev:1;)
 
 # Outbound FTP to External Server
 alert tcp 192.168.1.0/24 any -> !192.168.1.0/24 21 (msg:"Outbound FTP to external server"; flow:to_server,established; sid:1000007; rev:1;)

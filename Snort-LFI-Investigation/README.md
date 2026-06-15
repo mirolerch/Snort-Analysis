@@ -208,7 +208,7 @@ alert tcp 192.168.1.0/24 any -> !192.168.1.0/24 21 (msg:"Outbound FTP to externa
 | Brute force not blocked at application layer | Rate limiting and IP lockout after failed login threshold at WAF |
 | LFI via unsanitised `file=` parameter | Server-side input validation; WAF rule blocking `../` in URI parameters |
 | SSH private key accessible via web root | Restrict web server file permissions; private keys must never be web-accessible |
-| Outbound FTP to external IPs unblocked | Egress filtering — deny port 21 to non-approved destinations at perimeter firewall |
+| Outbound FTP to external IPs unblocked | Egress filtering - deny port 21 to non-approved destinations at perimeter firewall |
 | No DLP rule for PEM content in HTTP responses | Inspect HTTP responses for `BEGIN OPENSSH PRIVATE KEY` signatures |
 | Post-compromise SSH sessions undetected | Alert on new SSH sessions from previously unseen source IPs |
 

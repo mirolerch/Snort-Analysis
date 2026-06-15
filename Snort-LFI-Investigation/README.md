@@ -1,4 +1,4 @@
-# Snort Challenge — LFI, Credential Theft & Data Exfiltration Investigation
+# Snort Challenge - LFI, Credential Theft & Data Exfiltration Investigation
 
 > The SOC team at Oinksoft detected anomalous activity on one of their internal web servers. DLP alerts triggered alongside suspicious inbound HTTP traffic, indicating a potential compromise. This investigation reconstructs the full attack chain using custom Snort IDS rules and network forensic analysis of a provided PCAP file.
 
@@ -39,12 +39,12 @@
 ## Attack Timeline
 
 ```
-23:19:58  First HTTP requests observed — suspicious User-Agent string detected
+23:19:58  First HTTP requests observed - suspicious User-Agent string detected
 23:20:00  Automated brute force begins against /login.php (Hydra)
-23:20:41  First successful login — HTTP 302 redirect confirmed
-23:21:29  LFI exploitation begins — directory traversal via /admin.php?file=
-23:21:38  Escalation — /etc/host, /etc/hosts, /etc/passwd targeted
-23:22:09  SSH private key stolen — /home/bill/.ssh/id_rsa returned via HTTP 200
+23:20:41  First successful login - HTTP 302 redirect confirmed
+23:21:29  LFI exploitation begins - directory traversal via /admin.php?file=
+23:21:38  Escalation - /etc/host, /etc/hosts, /etc/passwd targeted
+23:22:09  SSH private key stolen - /home/bill/.ssh/id_rsa returned via HTTP 200
 23:22:37  Outbound FTP connection initiated to external IP 194.108.117.16:21
 ```
 
@@ -52,7 +52,7 @@
 
 ## Credential Brute Force
 
-Initial analysis of HTTP traffic in Wireshark revealed two distinct User-Agent strings. The majority of login requests carried a non-standard User-Agent identifying the tool as **Hydra** — a parallelised network login cracker:
+Initial analysis of HTTP traffic in Wireshark revealed two distinct User-Agent strings. The majority of login requests carried a non-standard User-Agent identifying the tool as **Hydra** - a parallelised network login cracker:
 
 ```
 User-Agent: Mozilla/4.0 (Hydra)
@@ -62,7 +62,7 @@ This is a reliable IOC as Hydra embeds its name directly in the User-Agent heade
 
 A custom Snort threshold rule was written to detect when 10 failed login attempts occur within a 30-second window from the same source IP. Running this rule against the PCAP produced **1,091 alerts**, confirming a sustained, high-volume brute force campaign.
 
-The attack ultimately succeeded — two HTTP `302 Found` redirects were detected, indicating successful authentication. The first successful login was recorded at UNIX epoch timestamp **`1717795241.242056`**, confirmed using `tcpdump -tt` to extract raw timestamps from the Snort alert log.
+The attack ultimately succeeded - two HTTP `302 Found` redirects were detected, indicating successful authentication. The first successful login was recorded at UNIX epoch timestamp **`1717795241.242056`**, confirmed using `tcpdump -tt` to extract raw timestamps from the Snort alert log.
 
 ![Suspicious User-Agent](screenshots/01_suspicious_user-agent_I.png)
 ![User-Agent hex dump](screenshots/02_suspicious_user-agent_II.png)
@@ -74,7 +74,7 @@ The attack ultimately succeeded — two HTTP `302 Found` redirects were detected
 
 ## Local File Inclusion Exploitation
 
-Following successful authentication, the attacker abused an unsanitised `file=` parameter in `/admin.php` to perform directory traversal. Requests containing the `../` pattern (`|2E 2E 2F|` in hex) were detected in the HTTP URI using a custom Snort rule — **5 alerts** were logged in total.
+Following successful authentication, the attacker abused an unsanitised `file=` parameter in `/admin.php` to perform directory traversal. Requests containing the `../` pattern (`|2E 2E 2F|` in hex) were detected in the HTTP URI using a custom Snort rule - **5 alerts** were logged in total.
 
 The traversal attempts escalated progressively, targeting increasingly sensitive system files:
 
@@ -86,7 +86,7 @@ The traversal attempts escalated progressively, targeting increasingly sensitive
 | 23:21:43 | `../../../../../../../../etc/passwd` |
 | 23:22:09 | `../../../../../../../home/bill/.ssh/id_rsa` |
 
-The final traversal request targeted the SSH private key of user `bill` — the most sensitive file accessible via this vulnerability.
+The final traversal request targeted the SSH private key of user `bill` - the most sensitive file accessible via this vulnerability.
 
 ![LFI detections console](screenshots/05_potential_local_file_inclusion_LFI_I.png)
 ![LFI Snort log detail](screenshots/06_potential_local_file_inclusion_LFI_II.png)
@@ -98,23 +98,23 @@ The final traversal request targeted the SSH private key of user `bill` — the 
 
 The server responded to the `id_rsa` traversal request with HTTP `200 OK`, returning the full OpenSSH private key in plaintext. This was confirmed both via Wireshark stream analysis and a Snort rule matching the key file signature `-----BEGIN OPENSSH PRIVATE KEY-----`.
 
-The HTTP response carrying the private key had a **Content-Length of `2134` bytes** — consistent with an RSA/ED25519 private key block. Analysis of all Content-Length values in the HTTP session confirmed this was the final, unique response distinct from the standard page responses:
+The HTTP response carrying the private key had a **Content-Length of `2134` bytes** - consistent with an RSA/ED25519 private key block. Analysis of all Content-Length values in the HTTP session confirmed this was the final, unique response distinct from the standard page responses:
 
 ```
-10671 × 4  — standard page responses
-15 × 2     — error responses
-163        — redirect body
-1081       — partial response
-2134       — OpenSSH private key
+10671 × 4  - standard page responses
+15 × 2     - error responses
+163        - redirect body
+1081       - partial response
+2134       - OpenSSH private key
 ```
 
 The stolen key gave the attacker passwordless SSH access to the compromised server.
 
 ![SSH key access alert](screenshots/08_tcpdump_ssh_I.png)
 ![SSH key Snort log](screenshots/09_tcpdump_ssh_II.png)
-![Wireshark stream — key request](screenshots/10_tcpdump_ssh_III.png)
+![Wireshark stream - key request](screenshots/10_tcpdump_ssh_III.png)
 ![Wireshark HTTP 200 OK response](screenshots/11_tcpdump_ssh_IV.png)
-![HTTP stream — BEGIN OPENSSH PRIVATE KEY](screenshots/12_tcpdump_ssh_V.png)
+![HTTP stream - BEGIN OPENSSH PRIVATE KEY](screenshots/12_tcpdump_ssh_V.png)
 
 ---
 
@@ -132,7 +132,7 @@ country:   CZ
 origin:    AS13036
 ```
 
-**ASN: `AS13036` — T-Mobile Czech Republic**
+**ASN: `AS13036` - T-Mobile Czech Republic**
 
 The use of FTP (unencrypted, port 21) to an external commercial ISP block is a strong indicator of opportunistic data exfiltration over a pre-staged server.
 
@@ -163,7 +163,7 @@ The use of FTP (unencrypted, port 21) to an external commercial ISP block is a s
 
 | Tactic | Technique | ID | Evidence |
 |--------|-----------|-----|---------|
-| Credential Access | Brute Force: Password Spraying | [T1110.003](https://attack.mitre.org/techniques/T1110/003/) | Hydra against `/login.php` — 1,091 HTTP 401 responses |
+| Credential Access | Brute Force: Password Spraying | [T1110.003](https://attack.mitre.org/techniques/T1110/003/) | Hydra against `/login.php` - 1,091 HTTP 401 responses |
 | Initial Access | Exploit Public-Facing Application | [T1190](https://attack.mitre.org/techniques/T1190/) | LFI via unsanitised `file=` parameter in `/admin.php` |
 | Discovery | File and Directory Discovery | [T1083](https://attack.mitre.org/techniques/T1083/) | Traversal targeting `/etc/passwd`, `/etc/hosts` |
 | Credential Access | Unsecured Credentials: Private Keys | [T1552.004](https://attack.mitre.org/techniques/T1552/004/) | `id_rsa` stolen from `/home/bill/.ssh/` via HTTP |
@@ -181,25 +181,22 @@ All rules were written and tested iteratively against the PCAP. Commented-out va
 alert tcp any any -> any 80 (msg:"Suspisios User-Agent detected"; content:"User-Agent"; http_header; nocase; sid:100001; rev:1;)
 
 # HTTP 401 Brute Force Threshold
-alert tcp any 80 -> any any (msg:"HTTP 401 brute force"; flow:to_client,established; content:"401"; http_stat_code; threshold:type threshold, track by_src, count 10 , seconds 30; sid:100001; rev:1;)
+alert tcp any 80 -> any any (msg:"HTTP 401 brute force"; flow:to_client,established; content:"401"; http_stat_code; threshold:type threshold, track by_src, count 10 , seconds 30; sid:100002; rev:1;)
 
 # Successful Login via HTTP 302
-alert tcp any 80 -> any any (msg:"HTTP 302 in UNIX epoch timestamp"; content:"302"; http_stat_code; flow:to_client,established; sid:1000001; rev:1;)
+alert tcp any 80 -> any any (msg:"HTTP 302 in UNIX epoch timestamp"; content:"302"; http_stat_code; flow:to_client,established; sid:1000003; rev:1;)
 
 # LFI Directory Traversal
-alert tcp any any -> any 80 (msg:"LFI Payload"; flow:to_server,established; content:"../"; http_uri; http_uri; sid:1000001; rev:1;)
+alert tcp any any -> any 80 (msg:"LFI Payload"; flow:to_server,established; content:"../"; http_uri; http_uri; sid:1000004; rev:1;)
 
 # OpenSSH Private Key Detection — multiple approaches tested
-# alert tcp any 80 -> any any (msg:"OpenSSH private key file in HTTP response"; flow:to_client,established; content:"BEGIN OPENSSH PRIVATE KEY"; nocase; sid:1000001; rev:1;)
-# alert tcp any 80 -> any any (msg:"RSA private key in HTTP response"; flow:to_client,established; content:"BEGIN RSA PRIVATE KEY"; nocase; sid:1000001; rev:1;)
-alert tcp any any -> any any (msg:"OpenSSH Private Key Leak"; flow:established; content:"-----BEGIN OPENSSH PRIVATE KEY-----"; sid:1000001; rev:1;)
-alert tcp any 80 -> any any (msg:"RSA private key in HTTP response"; flow:to_client,established; content:"BEGIN RSA PRIVATE KEY"; nocase; sid:1000002; rev:1;)
+alert tcp any 80 -> any any (msg:"RSA private key in HTTP response"; flow:to_client,established; content:"BEGIN RSA PRIVATE KEY"; nocase; sid:1000005; rev:1;)
 
 # LFI — SSH Private Key Access Attempt
-# alert tcp any any -> any 80 (msg:"LFI - SSH private key access attempt"; flow:to_server,established; content:".ssh/id_rsa"; http_uri; sid:1000001; rev:1;)
+# alert tcp any any -> any 80 (msg:"LFI - SSH private key access attempt"; flow:to_server,established; content:".ssh/id_rsa"; http_uri; sid:1000006; rev:1;)
 
 # Outbound FTP to External Server
-alert tcp 192.168.1.0/24 any -> !192.168.1.0/24 21 (msg:"Outbound FTP to external server"; flow:to_server,established; sid:1000001; rev:1;)
+alert tcp 192.168.1.0/24 any -> !192.168.1.0/24 21 (msg:"Outbound FTP to external server"; flow:to_server,established; sid:1000007; rev:1;)
 ```
 
 ---

@@ -173,53 +173,32 @@ The use of FTP (unencrypted, port 21) to an external commercial ISP block is a s
 
 ## Snort Rules
 
+All rules were written and tested iteratively against the PCAP. Commented-out variants represent earlier iterations tested during the investigation process.
+
 ```snort
 # Suspicious User-Agent
-alert tcp any any -> any 80 (
-  msg:"Suspicious User-Agent detected";
-  content:"User-Agent"; http_header; nocase;
-  sid:100001; rev:1;
-)
+alert tcp any any -> any 80 (msg:"Suspisios User-Agent detected"; content:"User-Agent"; http_header; nocase; sid:100001; rev:1;)
 
 # HTTP 401 Brute Force Threshold
-alert tcp any 80 -> any any (
-  msg:"HTTP 401 brute force - 10 attempts in 30s";
-  flow:to_client,established;
-  content:"401"; http_stat_code;
-  threshold:type threshold, track by_src, count 10, seconds 30;
-  sid:100002; rev:1;
-)
+alert tcp any 80 -> any any (msg:"HTTP 401 brute force"; flow:to_client,established; content:"401"; http_stat_code; threshold:type threshold, track by_src, count 10 , seconds 30; sid:100001; rev:1;)
 
 # Successful Login via HTTP 302
-alert tcp any 80 -> any any (
-  msg:"HTTP 302 successful login redirect";
-  content:"302"; http_stat_code;
-  flow:to_client,established;
-  sid:100003; rev:1;
-)
+alert tcp any 80 -> any any (msg:"HTTP 302 in UNIX epoch timestamp"; content:"302"; http_stat_code; flow:to_client,established; sid:1000001; rev:1;)
 
 # LFI Directory Traversal
-alert tcp any any -> any 80 (
-  msg:"LFI payload - directory traversal in URI";
-  flow:to_server,established;
-  content:"|2E 2E 2F|"; http_uri;
-  sid:100004; rev:1;
-)
+alert tcp any any -> any 80 (msg:"LFI Payload"; flow:to_server,established; content:"../"; http_uri; http_uri; sid:1000001; rev:1;)
 
-# OpenSSH Private Key in HTTP Response
-alert tcp any any -> any any (
-  msg:"OpenSSH Private Key Leak";
-  flow:established;
-  content:"-----BEGIN OPENSSH PRIVATE KEY-----";
-  sid:100005; rev:1;
-)
+# OpenSSH Private Key Detection — multiple approaches tested
+# alert tcp any 80 -> any any (msg:"OpenSSH private key file in HTTP response"; flow:to_client,established; content:"BEGIN OPENSSH PRIVATE KEY"; nocase; sid:1000001; rev:1;)
+# alert tcp any 80 -> any any (msg:"RSA private key in HTTP response"; flow:to_client,established; content:"BEGIN RSA PRIVATE KEY"; nocase; sid:1000001; rev:1;)
+alert tcp any any -> any any (msg:"OpenSSH Private Key Leak"; flow:established; content:"-----BEGIN OPENSSH PRIVATE KEY-----"; sid:1000001; rev:1;)
+# alert tcp any 80 -> any any (msg:"RSA private key in HTTP response"; flow:to_client,established; content:"BEGIN RSA PRIVATE KEY"; nocase; sid:1000002; rev:1;)
+
+# LFI — SSH Private Key Access Attempt
+# alert tcp any any -> any 80 (msg:"LFI - SSH private key access attempt"; flow:to_server,established; content:".ssh/id_rsa"; http_uri; sid:1000001; rev:1;)
 
 # Outbound FTP to External Server
-alert tcp 192.168.1.0/24 any -> !192.168.1.0/24 21 (
-  msg:"Outbound FTP to external server";
-  flow:to_server,established;
-  sid:100006; rev:1;
-)
+alert tcp 192.168.1.0/24 any -> !192.168.1.0/24 21 (msg:"Outbound FTP to external server"; flow:to_server,established; sid:1000001; rev:1;)
 ```
 
 ---

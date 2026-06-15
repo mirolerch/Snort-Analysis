@@ -192,7 +192,7 @@ alert tcp any any -> any 80 (msg:"LFI Payload"; flow:to_server,established; cont
 # alert tcp any 80 -> any any (msg:"OpenSSH private key file in HTTP response"; flow:to_client,established; content:"BEGIN OPENSSH PRIVATE KEY"; nocase; sid:1000001; rev:1;)
 # alert tcp any 80 -> any any (msg:"RSA private key in HTTP response"; flow:to_client,established; content:"BEGIN RSA PRIVATE KEY"; nocase; sid:1000001; rev:1;)
 alert tcp any any -> any any (msg:"OpenSSH Private Key Leak"; flow:established; content:"-----BEGIN OPENSSH PRIVATE KEY-----"; sid:1000001; rev:1;)
-# alert tcp any 80 -> any any (msg:"RSA private key in HTTP response"; flow:to_client,established; content:"BEGIN RSA PRIVATE KEY"; nocase; sid:1000002; rev:1;)
+alert tcp any 80 -> any any (msg:"RSA private key in HTTP response"; flow:to_client,established; content:"BEGIN RSA PRIVATE KEY"; nocase; sid:1000002; rev:1;)
 
 # LFI — SSH Private Key Access Attempt
 # alert tcp any any -> any 80 (msg:"LFI - SSH private key access attempt"; flow:to_server,established; content:".ssh/id_rsa"; http_uri; sid:1000001; rev:1;)
